@@ -338,6 +338,15 @@ func (ii *intIterator) AdvanceIfNeeded(minval uint32) {
 	}
 }
 
+type IntIterator = intIterator
+
+func (ii *IntIterator) Init(a *Bitmap) {
+	*ii = intIterator{
+		highlowcontainer: &a.highlowcontainer,
+	}
+	ii.init()
+}
+
 func newIntIterator(a *Bitmap) *intIterator {
 	p := new(intIterator)
 	p.pos = 0
