@@ -758,32 +758,12 @@ func batchEqual(e *task, batch []uint64, resultsChan chan *Bitmap,
 	resultsChan <- results
 }
 
-// ClearBits cleared the bits that exist in the target if they are also in the found set.
-func ClearBits(foundSet, target *Bitmap) {
-	iter := foundSet.Iterator()
-	for iter.HasNext() {
-		cID := iter.Next()
-		target.Remove(cID)
-	}
-}
-
 // ClearValues removes the values found in foundSet
 func (b *BSI) ClearValues(foundSet *Bitmap) {
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		ClearBits(foundSet, &b.eBM)
-	}()
-	for i := 0; i < b.BitCount(); i++ {
-		wg.Add(1)
-		go func(j int) {
-			defer wg.Done()
-			ClearBits(foundSet, &b.bA[j])
-		}(i)
+	b.eBM.AndNot(foundSet)
+	for i := range b.bA {
+		b.bA[i].AndNot(foundSet)
 	}
-	wg.Wait()
 }
 
 // NewBSIRetainSet - Construct a new BSI from a clone of existing BSI, retain only values contained in foundSet
