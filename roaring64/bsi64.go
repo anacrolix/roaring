@@ -616,6 +616,11 @@ func (b *BSI) ParOr(parallelism int, bsis ...*BSI) {
 	b.eBM = *ParOr(parallelism, x...)
 }
 
+func (b *BSI) FromBitmaps(bms []Bitmap) {
+	b.eBM = bms[0]
+	b.bA = bms[1:]
+}
+
 // UnmarshalBinary de-serialize a BSI.  The value at bitData[0] is the EBM.  Other indices are in least to most
 // significance order starting at bitData[1] (bit position 0).
 func (b *BSI) UnmarshalBinary(bitData [][]byte) error {
@@ -764,6 +769,20 @@ func (b *BSI) ClearValues(foundSet *Bitmap) {
 	for i := range b.bA {
 		b.bA[i].AndNot(foundSet)
 	}
+}
+
+// Retains only values found in retain. Returns how many values were not retained.
+func (b *BSI) Retain(retain *Bitmap) (dropped uint64) {
+	preCard := b.eBM.GetCardinality()
+	b.eBM.And(retain)
+	dropped = preCard - b.eBM.GetCardinality()
+	if dropped == 0 {
+		return
+	}
+	for i := range b.bA {
+		b.bA[i].And(retain)
+	}
+	return
 }
 
 // NewBSIRetainSet - Construct a new BSI from a clone of existing BSI, retain only values contained in foundSet
